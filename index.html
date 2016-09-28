@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Todo App</title>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="stylesheets/todos.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+    <script src="javascripts/handlebars-v3.0.0.js"></script>
+    <script src="javascripts/utilities.js"></script>
+    <script src="javascripts/framework.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Todos</h1>
+
+      <form action="" method="post">
+        <fieldset>
+          <input type="text" id="todo_name" name="todo_name" placeholder="What needs to be done?" autofocus />
+        </fieldset>
+      </form>
+
+      <ul id="todos"></ul>
+
+      <footer>
+        <a id="clear" href="#">Clear completed</a>
+      </footer>
+    </main>
+
+    <script id="todo" type="text/x-handlebars">
+      <a href="#" class="toggle"></a>
+      {{name}}
+    </script>
+    <script id="todo_edit" type="text/x-handlebars">
+      <li id="edit_todo" data-id="{{id}}">
+        <input type="text" value="{{name}}" />
+      </li>
+    </script>
+
+    <script src="javascripts/todos.js"></script>
+  </body>
+</html>
