@@ -85,18 +85,4 @@ App.TodoView = new ViewConstructor({
   }
 });
 
-
-
-
-
-// $("#clear").on("click", function(e) {
-//   e.preventDefault();
-//   var collection = todos.models;
-//   collection.forEach(function(model) {
-//     if (model.attributes.complete) {
-//       todos.remove(model);
-//     }
-//   });
-// });
-
 App.init();
