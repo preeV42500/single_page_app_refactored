@@ -9,44 +9,19 @@ var App = {
     if (!name) { return; }
 
     model = this.Todos.add({ // create new model and add it to the collection
-      name: name,
-      complete: false
+      name: name
     });
-    view = new this.TodoView(model); // create new view based on model
+    view = new this.TodoView({ model: model }); // create new view based on model
     this.$todos.append(view.$el);
 
     e.target.reset();
   },
-  editTodo: function(e) {
-    var $edit_form = $(templates.todo_edit(this.model.attributes));
-    this.$el.after($edit_form);
-    this.$el.remove();
-
-    $edit_form.on("blur", "input", App.saveEdit.bind(this)); // delegate blur event to list item
-  },
-  saveEdit: function(e) {
-    var name = $(e.target).val(),
-        $li = $(e.target).closest("li");
-    this.model.set("name", name); // reset the model with value from input
-    $li.after(this.$el);
-    $li.remove();
-    $(e.target).off(e);
-  },
-  toggleComplete: function(e) {
-    this.model.set("complete", !this.model.get("complete")); // set the 'complete' property on the model to the opposite of what it is
-    this.$el.toggleClass("complete"); // toggle the complete class on the list item
-    return false;
-  },
   clearCompleted: function(e) {
     e.preventDefault();
-    var completed = this.Todos.models.filter(function(model) {
-      // filter models in collection that have 'complete' set to true
-      return model.attributes.complete;
-    });
+    var incomplete = App.Todos.where({ complete: false }); // filter out incomplete items
 
-    completed.forEach(function(model) {
-      this.Todos.remove(model);
-    }.bind(this));
+    App.Todos.set(incomplete); // reset the collection to just the incomplete items
+
   },
   bind: function() {
     this.$el.find("form").on("submit", this.newTodo.bind(this));
@@ -67,21 +42,74 @@ $("[type='text/x-handlebars']").each(function() {
 
 
 // Todo model constructor; used in todos collection
-App.TodoConstructor = new ModelConstructor();
+(function() {
+  var id = 1;
 
-// Todos collection constructor
-App.TodosConstructor = new CollectionConstructor();
+  var todo_model = Backbone.Model.extend({
+    idAttribute: "id",
+    defaults: {
+      complete: false
+    },
+    initialize: function() {
+      this.set("id", id);
+      id++;
+    }
+  });
 
-// collection created using collection constructor with model constructor as argument
-App.Todos = new App.TodosConstructor(App.TodoConstructor);
+  App.Todo = todo_model;
+})();
+
+// Todos collection
+App.Todos = new Backbone.Collection([], {
+  model: App.Todo
+});
 
 // the todo view constructor; used to create a new view for each model
-App.TodoView = new ViewConstructor({
-  tag_name: "li",
+App.TodoView = Backbone.View.extend({
+  tagName: "li",
   template: templates.todo,
   events: {
-    "click a.toggle": App.toggleComplete,
-    "click": App.editTodo
+    "click a.toggle": "toggleComplete",
+    "click": "editTodo"
+  },
+  render: function() {
+    this.$el.attr("data-id", this.model.get("id"));
+    this.$el.html(this.template(this.model.toJSON()));
+  },
+  editTodo: function(e) {
+    var idx = +$(e.target).attr("data-id"),
+        model = App.Todos.get(idx),
+        $edit_form = $(templates.todo_edit(model.toJSON()));
+    this.$el.after($edit_form);
+    this.$el.remove();
+
+    $edit_form.find("input").focus(); // autofocus input field
+    $edit_form.on("blur", "input", this.saveEdit.bind(this)); // delegate blur event to list item
+  },
+  saveEdit: function(e) {
+    var $input = $(e.target),
+        name = $input.val(),
+        $li = $input.closest("li");
+
+    this.model.set("name", name); // reset the model with value from input
+    $li.after(this.$el);
+    $li.remove();
+    $input.off(e);
+    this.delegateEvents(); // rebind events to view
+  },
+  toggleComplete: function(e) {
+    var $li = $(e.target).closest("li"),
+        idx = +$li.attr("data-id"),
+        model = App.Todos.get(idx);
+
+    model.set("complete", !model.get("complete")); // set the 'complete' property on the model to the opposite of what it is
+    $li.toggleClass("complete", model.get("complete")); // toggle the complete class on the list item
+    return false;
+  },
+  initialize: function() {
+    this.render();
+    this.listenTo(this.model, "change", this.render);
+    this.listenTo(this.model, "remove", this.remove);
   }
 });
 
